@@ -1,0 +1,167 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: #1f2937;
+  background: #f3f6fb;
+  font-family:
+    "Microsoft YaHei",
+    "PingFang SC",
+    Arial,
+    sans-serif;
+}
+
+.site-header {
+  padding: 36px 20px;
+  color: white;
+  text-align: center;
+  background:
+    linear-gradient(
+      135deg,
+      #1f4e78,
+      #367bb5
+    );
+}
+
+.site-header h1 {
+  margin: 0 0 10px;
+  font-size: 32px;
+}
+
+.site-header p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+.container {
+  width: min(1000px, calc(100% - 32px));
+  margin: 28px auto;
+}
+
+.panel {
+  padding: 26px;
+  margin-bottom: 22px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgb(15 23 42 / 8%);
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+select,
+input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 15px;
+  background: white;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+button {
+  padding: 11px 22px;
+  color: white;
+  cursor: pointer;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  font-size: 15px;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button.secondary {
+  color: #1f2937;
+  background: #e2e8f0;
+}
+
+.question-card {
+  margin-top: 20px;
+  padding: 22px;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+}
+
+.question-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tag {
+  padding: 5px 10px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.question-title {
+  font-size: 18px;
+  line-height: 1.8;
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.option {
+  padding: 12px 15px;
+  border: 1px solid #dbe3ee;
+  border-radius: 8px;
+}
+
+.answer-box {
+  padding: 16px;
+  margin-top: 20px;
+  background: #f0fdf4;
+  border-left: 4px solid #22c55e;
+  border-radius: 6px;
+}
+
+.hidden {
+  display: none;
+}
+
+.practice-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 18px;
+  }
+
+  .site-header h1 {
+    font-size: 26px;
+  }
+}

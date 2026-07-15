@@ -1,0 +1,51 @@
+[
+  {
+    "id": "M9-VIETA-001",
+    "grade": 9,
+    "chapter": "一元二次方程",
+    "knowledgePoints": [
+      "韦达定理",
+      "根与系数关系"
+    ],
+    "difficulty": 1,
+    "type": "填空题",
+    "stem": "方程 x^2+3x+1=0 的两根为 x_1、x_2，求 x_1+x_2。",
+    "options": [],
+    "answer": "-3",
+    "analysis": "由韦达定理，x_1+x_2=-b/a=-3。"
+  },
+  {
+    "id": "M9-VIETA-002",
+    "grade": 9,
+    "chapter": "一元二次方程",
+    "knowledgePoints": [
+      "韦达定理",
+      "根与系数关系"
+    ],
+    "difficulty": 2,
+    "type": "选择题",
+    "stem": "方程 x^2+3x-4=0 的两根为 x_1、x_2，则 1/x_1+1/x_2 的值是（ ）。",
+    "options": [
+      "A. 3/4",
+      "B. 4/3",
+      "C. -3/4",
+      "D. 1"
+    ],
+    "answer": "A",
+    "analysis": "x_1+x_2=-3，x_1x_2=-4，所以两根倒数之和为3/4。"
+  },
+  {
+    "id": "M9-VIETA-003",
+    "grade": 9,
+    "chapter": "一元二次方程",
+    "knowledgePoints": [
+      "根的判别式"
+    ],
+    "difficulty": 3,
+    "type": "填空题",
+    "stem": "关于x的方程 x^2-2x+k=0 有两个不相等的实数根，求k的取值范围。",
+    "options": [],
+    "answer": "k<1",
+    "analysis": "两个不相等的实数根要求判别式大于0，即4-4k>0，所以k<1。"
+  }
+]

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>初中数学题库</title>
+
+  <link rel="stylesheet" href="./styles.css">
+
+  <!-- KaTeX数学公式 -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+  >
+</head>
+
+<body>
+  <header class="site-header">
+    <div>
+      <h1>初中数学题库</h1>
+      <p>七至九年级专项练习与随机组卷</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <h2>选择练习内容</h2>
+
+      <div class="filter-grid">
+        <label>
+          年级
+          <select id="grade">
+            <option value="9">九年级</option>
+            <option value="8">八年级</option>
+            <option value="7">七年级</option>
+          </select>
+        </label>
+
+        <label>
+          知识点
+          <select id="knowledgePoint">
+            <option value="">全部知识点</option>
+            <option value="韦达定理">韦达定理</option>
+            <option value="根的判别式">根的判别式</option>
+            <option value="根与系数关系">
+              根与系数关系
+            </option>
+          </select>
+        </label>
+
+        <label>
+          难度
+          <select id="difficulty">
+            <option value="">全部难度</option>
+            <option value="1">入门</option>
+            <option value="2">基础</option>
+            <option value="3">中等</option>
+            <option value="4">较难</option>
+            <option value="5">挑战</option>
+          </select>
+        </label>
+
+        <label>
+          题目数量
+          <select id="questionCount">
+            <option value="5">5题</option>
+            <option value="10">10题</option>
+            <option value="20">20题</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button id="startPractice">
+          开始专项练习
+        </button>
+
+        <button id="randomPractice" class="secondary">
+          随机抽题
+        </button>
+      </div>
+    </section>
+
+    <section id="practiceSection" class="panel hidden">
+      <div class="practice-header">
+        <h2>练习题目</h2>
+        <span id="questionProgress"></span>
+      </div>
+
+      <div id="questionContainer"></div>
+
+      <div class="actions">
+        <button id="previousQuestion" class="secondary">
+          上一题
+        </button>
+
+        <button id="showAnswer">
+          查看答案
+        </button>
+
+        <button id="nextQuestion">
+          下一题
+        </button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
