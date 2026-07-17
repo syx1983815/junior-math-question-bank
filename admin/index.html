@@ -15,8 +15,8 @@
       <div class="brand">
         <div class="brand-mark">题</div>
         <div>
-          <strong>初中数学题库</strong>
-          <span>管理后台 V1</span>
+          <strong>初中题库</strong>
+          <span>管理后台 V2</span>
         </div>
       </div>
 
@@ -33,6 +33,10 @@
         </button>
         <button class="nav-item" data-view="questions">
           <span class="nav-icon">☷</span><span>全部题目</span>
+        </button>
+        <button class="nav-item" data-view="sources">
+          <span class="nav-icon">⌕</span><span>真题采集</span>
+          <span class="nav-badge" id="sourceBadge">0</span>
         </button>
         <button class="nav-item" data-view="knowledge">
           <span class="nav-icon">⌘</span><span>知识点管理</span>
@@ -353,6 +357,45 @@
           </div>
           <div id="questionEmpty" class="table-empty hidden">没有找到符合条件的题目。</div>
           <div class="pagination" id="questionPagination"></div>
+        </article>
+      </section>
+
+
+      <section class="view" id="view-sources" data-title="江苏真题采集" data-subtitle="管理2022—2026年江苏13市五学科真题来源、文件和解析进度">
+        <article class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>近5年江苏中考采集目录</h2>
+              <p>13个设区市 × 5年 × 数学、语文、英语、物理、化学，共325个采集任务</p>
+            </div>
+            <div class="action-row no-padding">
+              <button class="button secondary small" id="loadJiangsuSources">载入目录</button>
+              <button class="button ghost small" id="exportSources">导出清单</button>
+            </div>
+          </div>
+          <div class="notice warning source-notice">
+            <strong>来源与版权说明</strong>
+            <p>本页面保存公开来源索引和采集进度，不自动转载第三方完整试卷。取得合法原卷或由你上传文件后，再拆题、生成解析并进入人工审核。</p>
+          </div>
+          <div class="filter-panel source-filters">
+            <label class="search-box wide"><span>⌕</span><input id="sourceSearch" type="search" placeholder="搜索城市、学科、年份或标题"></label>
+            <select id="sourceYear"><option value="">全部年份</option><option>2026</option><option>2025</option><option>2024</option><option>2023</option><option>2022</option></select>
+            <select id="sourceCity"><option value="">全部城市</option></select>
+            <select id="sourceSubject"><option value="">全部学科</option><option>数学</option><option>语文</option><option>英语</option><option>物理</option><option>化学</option></select>
+            <select id="sourceProgress"><option value="">全部进度</option><option value="未取得原文件">未取得原文件</option><option value="已取得原文件">已取得原文件</option><option value="已解析">已解析</option><option value="已发布">已发布</option></select>
+          </div>
+          <div class="toolbar compact-toolbar">
+            <div class="toolbar-left"><span id="sourceResultCount">共0份试卷</span></div>
+            <div class="toolbar-right"><span class="selection-count" id="sourceSelectionCount">已选择0份</span><button class="button secondary small" data-source-bulk="obtained">标记已取得</button><button class="button secondary small" data-source-bulk="parsed">标记已解析</button><button class="button primary small" data-source-bulk="published">标记已发布</button></div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table source-table">
+              <thead><tr><th class="checkbox-cell"><input type="checkbox" id="sourceSelectAll"></th><th>试卷</th><th>年份／城市</th><th>学科</th><th>采集进度</th><th>来源</th><th>操作</th></tr></thead>
+              <tbody id="sourceTableBody"></tbody>
+            </table>
+          </div>
+          <div id="sourceEmpty" class="table-empty hidden">尚未载入江苏真题来源目录。</div>
+          <div class="pagination" id="sourcePagination"></div>
         </article>
       </section>
 

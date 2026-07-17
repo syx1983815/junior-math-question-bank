@@ -2,6 +2,7 @@
 
 const STORAGE_KEY = "jmqb_admin_v1";
 const PAGE_SIZE = 12;
+const SOURCE_PAGE_SIZE = 15;
 
 const DEFAULT_KNOWLEDGE = [
   { grade: 7, chapter: "有理数", name: "正数和负数", keywords: ["正数", "负数", "相反意义"] },
@@ -37,6 +38,7 @@ const DEFAULT_STATE = () => ({
   questions: [],
   knowledge: structuredClone(DEFAULT_KNOWLEDGE),
   imports: [],
+  paperSources: [],
   settings: { autoPublishHighConfidence: false }
 });
 
@@ -45,6 +47,8 @@ let pendingFiles = [];
 let activeKnowledgeGrade = 7;
 let reviewPage = 1;
 let questionPage = 1;
+let sourcePage = 1;
+const selectedSources = new Set();
 const selectedReview = new Set();
 const selectedQuestions = new Set();
 
@@ -69,7 +73,8 @@ function loadState() {
       ...parsed,
       questions: Array.isArray(parsed.questions) ? parsed.questions : [],
       knowledge: Array.isArray(parsed.knowledge) && parsed.knowledge.length ? parsed.knowledge : structuredClone(DEFAULT_KNOWLEDGE),
-      imports: Array.isArray(parsed.imports) ? parsed.imports : []
+      imports: Array.isArray(parsed.imports) ? parsed.imports : [],
+      paperSources: Array.isArray(parsed.paperSources) ? parsed.paperSources : []
     };
   } catch (error) {
     console.error("题库状态读取失败", error);
@@ -123,6 +128,7 @@ function switchView(viewName) {
   $("#sidebar").classList.remove("open");
   if (viewName === "review") renderReviewTable();
   if (viewName === "questions") renderQuestionTable();
+  if (viewName === "sources") renderSourceTable();
   if (viewName === "knowledge") renderKnowledgeTree();
   if (viewName === "settings") renderStorageInfo();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -403,6 +409,7 @@ function renderDashboard() {
   $("#statReview").textContent = counts.review;
   $("#statKnowledge").textContent = knowledgeCount;
   $("#reviewBadge").textContent = counts.review;
+  if ($("#sourceBadge")) $("#sourceBadge").textContent = state.paperSources.length;
 
   const statusConfig = [
     ["published", "green"], ["review", "amber"], ["draft", "gray"], ["offline", "gray"]
@@ -541,6 +548,95 @@ function updateQuestionSelection() {
   $("#questionSelectAll").checked = checks.length > 0 && checks.every((check) => check.checked);
 }
 
+
+function sourceProgressLabel(item) {
+  if (item.publishStatus === "已发布") return "已发布";
+  if (item.parseStatus === "已解析") return "已解析";
+  if (item.fileStatus === "已取得原文件") return "已取得原文件";
+  return "未取得原文件";
+}
+
+function filterPaperSources() {
+  const search = $("#sourceSearch")?.value.trim().toLowerCase() || "";
+  const year = Number($("#sourceYear")?.value) || null;
+  const city = $("#sourceCity")?.value || "";
+  const subject = $("#sourceSubject")?.value || "";
+  const progress = $("#sourceProgress")?.value || "";
+  return (state.paperSources || []).filter((item) => {
+    const haystack = `${item.id} ${item.title} ${item.city} ${item.subject} ${item.year}`.toLowerCase();
+    if (search && !haystack.includes(search)) return false;
+    if (year && item.year !== year) return false;
+    if (city && item.city !== city) return false;
+    if (subject && item.subject !== subject) return false;
+    if (progress && sourceProgressLabel(item) !== progress) return false;
+    return true;
+  }).sort((a,b) => b.year-a.year || a.city.localeCompare(b.city,'zh-CN') || a.subject.localeCompare(b.subject,'zh-CN'));
+}
+
+function sourceRow(item) {
+  const verified = (item.sources || []).filter((s) => s.verified);
+  const links = (verified.length ? verified : (item.sources || []).slice(0,2)).map((source) => `<a class="source-link ${source.verified ? "source-verified" : ""}" href="${escapeHtml(source.url)}" target="_blank" rel="noopener noreferrer">${source.verified ? "✓ " : ""}${escapeHtml(source.name)}</a>`).join("");
+  const progress = sourceProgressLabel(item);
+  return `<tr>
+    <td class="checkbox-cell"><input class="row-check source-check" type="checkbox" data-id="${escapeHtml(item.id)}" ${selectedSources.has(item.id) ? "checked" : ""}></td>
+    <td class="question-cell"><strong>${escapeHtml(item.id)}</strong><div class="question-preview">${escapeHtml(item.title)}</div><div class="meta-line">${escapeHtml(item.sourceStatus || "待核验")}</div></td>
+    <td><strong>${item.year}</strong><br>${escapeHtml(item.city)}</td>
+    <td><span class="tag">${escapeHtml(item.subject)}</span></td>
+    <td><div class="source-progress"><span class="status ${progress === "已发布" ? "published" : progress === "已解析" ? "review" : "draft"}">${escapeHtml(progress)}</span><small>${escapeHtml(item.reviewStatus || "未审核")}</small></div></td>
+    <td>${links || '<span class="meta-line">暂无来源</span>'}</td>
+    <td><div class="row-actions"><a class="link-button" href="${escapeHtml((item.sources || []).at(-1)?.url || '#')}" target="_blank" rel="noopener noreferrer">检索</a><button class="link-button" data-source-status="obtained" data-id="${escapeHtml(item.id)}">已取得</button><button class="link-button" data-source-status="parsed" data-id="${escapeHtml(item.id)}">已解析</button></div></td>
+  </tr>`;
+}
+
+function renderSourceTable() {
+  if (!$("#sourceTableBody")) return;
+  const cities = [...new Set((state.paperSources || []).map((item) => item.city))].sort((a,b) => a.localeCompare(b,'zh-CN'));
+  const currentCity = $("#sourceCity").value;
+  $("#sourceCity").innerHTML = '<option value="">全部城市</option>' + cities.map((city) => `<option ${city === currentCity ? "selected" : ""}>${escapeHtml(city)}</option>`).join("");
+  const filtered = filterPaperSources();
+  const pages = Math.max(1, Math.ceil(filtered.length / SOURCE_PAGE_SIZE));
+  sourcePage = Math.min(sourcePage, pages);
+  const pageItems = filtered.slice((sourcePage - 1) * SOURCE_PAGE_SIZE, sourcePage * SOURCE_PAGE_SIZE);
+  $("#sourceResultCount").textContent = `共 ${filtered.length} 份试卷`;
+  $("#sourceTableBody").innerHTML = pageItems.map(sourceRow).join("");
+  $("#sourceEmpty").classList.toggle("hidden", filtered.length > 0);
+  renderPagination($("#sourcePagination"), sourcePage, pages, (page) => { sourcePage = page; renderSourceTable(); });
+  updateSourceSelection();
+}
+
+function updateSourceSelection() {
+  if (!$("#sourceSelectionCount")) return;
+  $("#sourceSelectionCount").textContent = `已选择 ${selectedSources.size} 份`;
+  const checks = $$(".source-check");
+  $("#sourceSelectAll").checked = checks.length > 0 && checks.every((check) => check.checked);
+}
+
+async function loadJiangsuSourceCatalog() {
+  try {
+    const response = await fetch("../data/jiangsu-zhongkao-sources-2022-2026.json", { cache: "no-store" });
+    if (!response.ok) throw new Error("无法读取江苏真题来源目录");
+    const payload = await response.json();
+    const incoming = Array.isArray(payload.paperSources) ? payload.paperSources : [];
+    const map = new Map((state.paperSources || []).map((item) => [item.id, item]));
+    incoming.forEach((item) => map.set(item.id, { ...item, ...(map.get(item.id) || {}) }));
+    state.paperSources = [...map.values()];
+    saveState();
+    toast(`已载入 ${incoming.length} 个江苏中考采集任务`);
+    renderSourceTable();
+  } catch (error) { toast(error.message, "error"); }
+}
+
+function setSourceProgress(ids, progress) {
+  state.paperSources.forEach((item) => {
+    if (!ids.includes(item.id)) return;
+    if (progress === "obtained") item.fileStatus = "已取得原文件";
+    if (progress === "parsed") { item.fileStatus = "已取得原文件"; item.parseStatus = "已解析"; item.reviewStatus = "待审核"; }
+    if (progress === "published") { item.fileStatus = "已取得原文件"; item.parseStatus = "已解析"; item.reviewStatus = "已审核"; item.publishStatus = "已发布"; }
+    item.updatedAt = new Date().toISOString();
+  });
+  saveState();
+}
+
 function renderKnowledgeTree() {
   $$("[data-grade-tab]").forEach((tab) => tab.classList.toggle("active", Number(tab.dataset.gradeTab) === activeKnowledgeGrade));
   const nodes = state.knowledge.filter((node) => node.grade === activeKnowledgeGrade);
@@ -573,6 +669,7 @@ function updateAllViews() {
   renderDashboard();
   if ($("#view-review").classList.contains("active")) renderReviewTable();
   if ($("#view-questions").classList.contains("active")) renderQuestionTable();
+  if ($("#view-sources")?.classList.contains("active")) renderSourceTable();
   if ($("#view-knowledge").classList.contains("active")) renderKnowledgeTree();
   if ($("#view-settings").classList.contains("active")) renderStorageInfo();
 }
@@ -754,12 +851,19 @@ function bindEvents() {
 
   ["reviewSearch", "reviewConfidence", "reviewGrade"].forEach((id) => $("#" + id).addEventListener("input", () => { reviewPage = 1; renderReviewTable(); }));
   ["questionSearch", "questionGrade", "questionType", "questionDifficulty", "questionStatus"].forEach((id) => $("#" + id).addEventListener("input", () => { questionPage = 1; renderQuestionTable(); }));
+  ["sourceSearch", "sourceYear", "sourceCity", "sourceSubject", "sourceProgress"].forEach((id) => $("#" + id)?.addEventListener("input", () => { sourcePage = 1; renderSourceTable(); }));
 
   $("#reviewTableBody").addEventListener("change", (event) => {
     const check = event.target.closest(".review-check");
     if (!check) return;
     check.checked ? selectedReview.add(check.dataset.id) : selectedReview.delete(check.dataset.id);
     updateReviewSelection();
+  });
+  $("#sourceTableBody")?.addEventListener("change", (event) => {
+    const check = event.target.closest(".source-check");
+    if (!check) return;
+    check.checked ? selectedSources.add(check.dataset.id) : selectedSources.delete(check.dataset.id);
+    updateSourceSelection();
   });
   $("#questionTableBody").addEventListener("change", (event) => {
     const check = event.target.closest(".question-check");
@@ -770,6 +874,10 @@ function bindEvents() {
   $("#reviewSelectAll").addEventListener("change", (event) => {
     $$(".review-check").forEach((check) => { check.checked = event.target.checked; event.target.checked ? selectedReview.add(check.dataset.id) : selectedReview.delete(check.dataset.id); });
     updateReviewSelection();
+  });
+  $("#sourceSelectAll")?.addEventListener("change", (event) => {
+    $$(".source-check").forEach((check) => { check.checked = event.target.checked; event.target.checked ? selectedSources.add(check.dataset.id) : selectedSources.delete(check.dataset.id); });
+    updateSourceSelection();
   });
   $("#questionSelectAll").addEventListener("change", (event) => {
     $$(".question-check").forEach((check) => { check.checked = event.target.checked; event.target.checked ? selectedQuestions.add(check.dataset.id) : selectedQuestions.delete(check.dataset.id); });
@@ -786,6 +894,8 @@ function bindEvents() {
       const item = state.questions.find((q) => q.id === toggle.dataset.toggleQuestion);
       if (item) { setQuestionStatus([item.id], item.status === "published" ? "offline" : "published"); toast(item.status === "published" ? "题目已下架" : "题目已发布"); }
     }
+    const sourceStatus = event.target.closest("[data-source-status]");
+    if (sourceStatus) { setSourceProgress([sourceStatus.dataset.id], sourceStatus.dataset.sourceStatus); toast("采集进度已更新"); }
     const del = event.target.closest("[data-delete-question]");
     if (del && confirm("确定删除这道题吗？此操作无法撤销。")) { deleteQuestions([del.dataset.deleteQuestion]); toast("题目已删除", "warning"); }
   });
@@ -798,6 +908,14 @@ function bindEvents() {
     if (button.dataset.bulkAction === "publish") { setQuestionStatus(ids, "published"); toast(`${ids.length} 道题已审核发布`); }
     selectedReview.clear();
     renderReviewTable();
+  }));
+
+  $$('[data-source-bulk]').forEach((button) => button.addEventListener("click", () => {
+    const ids = [...selectedSources];
+    if (!ids.length) { toast("请先选择试卷", "warning"); return; }
+    setSourceProgress(ids, button.dataset.sourceBulk);
+    toast(`已更新 ${ids.length} 份试卷的采集进度`);
+    selectedSources.clear(); renderSourceTable();
   }));
 
   $$('[data-question-bulk]').forEach((button) => button.addEventListener("click", () => {
@@ -830,6 +948,8 @@ function bindEvents() {
     toast("知识点已新增");
   });
 
+  $("#loadJiangsuSources")?.addEventListener("click", loadJiangsuSourceCatalog);
+  $("#exportSources")?.addEventListener("click", () => downloadJson({ metadata: { title: "江苏中考真题来源目录", exportedAt: new Date().toISOString() }, paperSources: state.paperSources }, `jiangsu-zhongkao-sources-${new Date().toISOString().slice(0,10)}.json`));
   $("#exportAll").addEventListener("click", exportBackup);
   $("#restoreBackup").addEventListener("click", () => $("#restoreInput").click());
   $("#restoreInput").addEventListener("change", async (event) => {
@@ -850,7 +970,7 @@ function bindEvents() {
     if (!confirm("确定清空当前浏览器中的全部题库数据吗？此操作无法撤销。")) return;
     state = DEFAULT_STATE();
     localStorage.removeItem(STORAGE_KEY);
-    selectedReview.clear(); selectedQuestions.clear();
+    selectedReview.clear(); selectedQuestions.clear(); selectedSources.clear();
     saveState();
     toast("本地题库已清空", "warning");
   });
