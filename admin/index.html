@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="初中数学题库管理后台">
+  <title>题库管理后台｜Junior Math Question Bank</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark">题</div>
+        <div>
+          <strong>初中数学题库</strong>
+          <span>管理后台 V1</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="管理导航">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">▦</span><span>控制台</span>
+        </button>
+        <button class="nav-item" data-view="import">
+          <span class="nav-icon">⇧</span><span>上传题库</span>
+        </button>
+        <button class="nav-item" data-view="review">
+          <span class="nav-icon">✓</span><span>导入审核</span>
+          <span class="nav-badge" id="reviewBadge">0</span>
+        </button>
+        <button class="nav-item" data-view="questions">
+          <span class="nav-icon">☷</span><span>全部题目</span>
+        </button>
+        <button class="nav-item" data-view="knowledge">
+          <span class="nav-icon">⌘</span><span>知识点管理</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-icon">⚙</span><span>数据与设置</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../" class="back-link">← 返回学生端</a>
+        <small>数据当前保存在本浏览器</small>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" id="mobileMenu" aria-label="打开菜单">☰</button>
+        <div>
+          <h1 id="pageTitle">控制台</h1>
+          <p id="pageSubtitle">查看题库状态、待审核任务与分类统计</p>
+        </div>
+        <div class="top-actions">
+          <button class="button ghost" id="quickExport">导出备份</button>
+          <button class="button primary" data-go-view="import">＋ 上传题库</button>
+        </div>
+      </header>
+
+      <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+
+      <section class="view active" id="view-dashboard" data-title="控制台" data-subtitle="查看题库状态、待审核任务与分类统计">
+        <div class="stat-grid">
+          <article class="stat-card">
+            <span class="stat-label">全部题目</span>
+            <strong id="statTotal">0</strong>
+            <small>已导入的独立子题</small>
+          </article>
+          <article class="stat-card accent-green">
+            <span class="stat-label">已发布</span>
+            <strong id="statPublished">0</strong>
+            <small>可供学生端抽取</small>
+          </article>
+          <article class="stat-card accent-amber">
+            <span class="stat-label">待审核</span>
+            <strong id="statReview">0</strong>
+            <small>需要确认分类和答案</small>
+          </article>
+          <article class="stat-card accent-blue">
+            <span class="stat-label">知识点</span>
+            <strong id="statKnowledge">0</strong>
+            <small>题目中已使用的知识点</small>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>快速开始</h2>
+                <p>按推荐流程建立第一批可用题库</p>
+              </div>
+            </div>
+            <ol class="steps">
+              <li><span>1</span><div><strong>上传题库</strong><p>支持 JSON、Excel、CSV，也可直接粘贴题目。</p></div></li>
+              <li><span>2</span><div><strong>自动分析</strong><p>规则引擎识别年级、章节、知识点、题型和难度。</p></div></li>
+              <li><span>3</span><div><strong>人工审核</strong><p>修改低置信度分类，批量确认后发布。</p></div></li>
+              <li><span>4</span><div><strong>学生端调用</strong><p>仅抽取“已发布”题目生成练习和试卷。</p></div></li>
+            </ol>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>题目状态</h2>
+                <p>当前浏览器中的题库状态分布</p>
+              </div>
+            </div>
+            <div id="statusBars" class="bar-list"></div>
+          </article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>章节分布</h2>
+                <p>按题目数量排序</p>
+              </div>
+            </div>
+            <div id="chapterStats" class="list-stats empty-state">暂无数据</div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>最近导入</h2>
+                <p>最近的上传和导入批次</p>
+              </div>
+            </div>
+            <div id="recentImports" class="recent-list empty-state">暂无导入记录</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="view-import" data-title="上传题库" data-subtitle="上传、解析并自动识别题目的各项属性">
+        <div class="import-layout">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>上传文件</h2>
+                <p>支持本项目标准 JSON、普通 JSON 数组、Excel 和 CSV</p>
+              </div>
+            </div>
+
+            <div class="form-grid two-columns">
+              <label class="field">
+                <span>题库名称</span>
+                <input id="bankName" type="text" placeholder="例如：九年级一元二次方程专项">
+              </label>
+              <label class="field">
+                <span>默认年级</span>
+                <select id="defaultGrade">
+                  <option value="">自动识别</option>
+                  <option value="7">七年级</option>
+                  <option value="8">八年级</option>
+                  <option value="9">九年级</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>教材版本</span>
+                <select id="textbookVersion">
+                  <option value="通用版">通用版</option>
+                  <option value="人教版">人教版</option>
+                  <option value="苏科版">苏科版</option>
+                  <option value="北师大版">北师大版</option>
+                  <option value="沪科版">沪科版</option>
+                  <option value="华师大版">华师大版</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>默认学期</span>
+                <select id="defaultSemester">
+                  <option value="">自动识别</option>
+                  <option value="上册">上册</option>
+                  <option value="下册">下册</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="drop-zone" id="dropZone" tabindex="0">
+              <input id="fileInput" type="file" accept=".json,.xlsx,.xls,.csv" hidden multiple>
+              <div class="drop-icon">⇧</div>
+              <strong>点击选择或拖入题库文件</strong>
+              <p>JSON / XLSX / XLS / CSV，单个文件建议不超过 20MB</p>
+              <button class="button secondary" id="chooseFile" type="button">选择文件</button>
+            </div>
+
+            <div id="selectedFiles" class="selected-files"></div>
+
+            <details class="paste-details">
+              <summary>或者直接粘贴题目文本／JSON</summary>
+              <textarea id="pasteInput" rows="10" placeholder="可粘贴 JSON，也可粘贴按空行分隔的题目文本。纯文本会先生成待审核题目。"></textarea>
+            </details>
+
+            <label class="check-row">
+              <input id="autoPublishHighConfidence" type="checkbox">
+              <span>置信度达到 95% 的题目自动发布（初期不建议开启）</span>
+            </label>
+
+            <div class="action-row">
+              <button class="button primary" id="startImport">上传并自动分析</button>
+              <button class="button ghost" id="loadDemo">载入项目示例题库</button>
+            </div>
+          </article>
+
+          <aside class="panel import-guide">
+            <div class="panel-header">
+              <div>
+                <h2>分析内容</h2>
+                <p>导入后自动生成以下字段</p>
+              </div>
+            </div>
+            <ul class="feature-list">
+              <li><span>✓</span>题目与组合题 ID</li>
+              <li><span>✓</span>年级、学期和教材版本</li>
+              <li><span>✓</span>章节、题型分类和知识点</li>
+              <li><span>✓</span>选择／填空／解答／证明题型</li>
+              <li><span>✓</span>1—5 级难度</li>
+              <li><span>✓</span>答案、解析、方法与来源</li>
+              <li><span>✓</span>字段置信度和待审核状态</li>
+              <li><span>✓</span>基于题干的重复题提示</li>
+            </ul>
+            <div class="notice warning">
+              <strong>当前 V1 为规则分析</strong>
+              <p>可以处理结构化题库和常见关键词。后续接入服务端 AI 后，可增强 PDF 拆题、公式识别和复杂知识点判断。</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-review" data-title="导入审核" data-subtitle="检查自动分类结果，批量确认并发布题目">
+        <article class="panel table-panel">
+          <div class="toolbar">
+            <div class="toolbar-left">
+              <label class="search-box">
+                <span>⌕</span>
+                <input id="reviewSearch" type="search" placeholder="搜索题干、知识点或来源">
+              </label>
+              <select id="reviewConfidence">
+                <option value="">全部置信度</option>
+                <option value="low">低于 70%</option>
+                <option value="medium">70%—89%</option>
+                <option value="high">90%以上</option>
+              </select>
+              <select id="reviewGrade">
+                <option value="">全部年级</option>
+                <option value="7">七年级</option>
+                <option value="8">八年级</option>
+                <option value="9">九年级</option>
+              </select>
+            </div>
+            <div class="toolbar-right">
+              <span class="selection-count" id="reviewSelectionCount">已选择 0 道</span>
+              <button class="button secondary small" data-bulk-action="reanalyze">重新分析</button>
+              <button class="button secondary small" data-bulk-action="draft">存为草稿</button>
+              <button class="button primary small" data-bulk-action="publish">审核并发布</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="checkbox-cell"><input type="checkbox" id="reviewSelectAll"></th>
+                  <th>题目</th>
+                  <th>年级</th>
+                  <th>章节／知识点</th>
+                  <th>题型</th>
+                  <th>难度</th>
+                  <th>置信度</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="reviewTableBody"></tbody>
+            </table>
+          </div>
+          <div id="reviewEmpty" class="table-empty hidden">目前没有待审核题目。</div>
+          <div class="pagination" id="reviewPagination"></div>
+        </article>
+      </section>
+
+      <section class="view" id="view-questions" data-title="全部题目" data-subtitle="搜索、筛选、编辑、发布或下架已有题库">
+        <article class="panel table-panel">
+          <div class="filter-panel">
+            <label class="search-box wide">
+              <span>⌕</span>
+              <input id="questionSearch" type="search" placeholder="搜索题干、ID、知识点、章节或来源">
+            </label>
+            <select id="questionGrade">
+              <option value="">全部年级</option>
+              <option value="7">七年级</option>
+              <option value="8">八年级</option>
+              <option value="9">九年级</option>
+            </select>
+            <select id="questionType">
+              <option value="">全部题型</option>
+              <option value="选择题">选择题</option>
+              <option value="填空题">填空题</option>
+              <option value="解答题">解答题</option>
+              <option value="证明题">证明题</option>
+            </select>
+            <select id="questionDifficulty">
+              <option value="">全部难度</option>
+              <option value="1">1 入门</option>
+              <option value="2">2 基础</option>
+              <option value="3">3 中等</option>
+              <option value="4">4 较难</option>
+              <option value="5">5 挑战</option>
+            </select>
+            <select id="questionStatus">
+              <option value="">全部状态</option>
+              <option value="published">已发布</option>
+              <option value="review">待审核</option>
+              <option value="draft">草稿</option>
+              <option value="offline">已下架</option>
+            </select>
+          </div>
+
+          <div class="toolbar compact-toolbar">
+            <div class="toolbar-left">
+              <span id="questionResultCount">共 0 道题</span>
+            </div>
+            <div class="toolbar-right">
+              <span class="selection-count" id="questionSelectionCount">已选择 0 道</span>
+              <button class="button ghost small" data-question-bulk="export">导出所选</button>
+              <button class="button secondary small" data-question-bulk="offline">批量下架</button>
+              <button class="button primary small" data-question-bulk="publish">批量发布</button>
+              <button class="button danger small" data-question-bulk="delete">批量删除</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th class="checkbox-cell"><input type="checkbox" id="questionSelectAll"></th>
+                  <th>ID／题干</th>
+                  <th>分类</th>
+                  <th>题型</th>
+                  <th>难度</th>
+                  <th>状态</th>
+                  <th>更新时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="questionTableBody"></tbody>
+            </table>
+          </div>
+          <div id="questionEmpty" class="table-empty hidden">没有找到符合条件的题目。</div>
+          <div class="pagination" id="questionPagination"></div>
+        </article>
+      </section>
+
+      <section class="view" id="view-knowledge" data-title="知识点管理" data-subtitle="维护固定的章节和知识点目录，避免自动分类失控">
+        <div class="knowledge-layout">
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>知识目录</h2>
+                <p>自动分析只从这里已有的目录中选择</p>
+              </div>
+              <button class="button primary small" id="addKnowledge">＋ 新增知识点</button>
+            </div>
+            <div class="tabs" id="gradeTabs">
+              <button class="tab active" data-grade-tab="7">七年级</button>
+              <button class="tab" data-grade-tab="8">八年级</button>
+              <button class="tab" data-grade-tab="9">九年级</button>
+            </div>
+            <div id="knowledgeTree" class="knowledge-tree"></div>
+          </article>
+
+          <aside class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>分类规则</h2>
+                <p>规则引擎通过关键词匹配章节与知识点</p>
+              </div>
+            </div>
+            <div class="notice info">
+              <strong>推荐做法</strong>
+              <p>先确定教材版本和完整知识目录，再上传题库。AI或规则引擎只能选择已有知识点；无法确定的题目进入“待确认知识点”。</p>
+            </div>
+            <div class="rule-summary" id="ruleSummary"></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-settings" data-title="数据与设置" data-subtitle="备份、恢复、初始化和查看本地存储状态">
+        <div class="settings-grid">
+          <article class="panel setting-card">
+            <div class="setting-icon">⇩</div>
+            <div>
+              <h2>导出完整备份</h2>
+              <p>导出题目、知识点和导入记录，可保存到 GitHub 仓库或本地。</p>
+              <button class="button primary" id="exportAll">导出 JSON 备份</button>
+            </div>
+          </article>
+
+          <article class="panel setting-card">
+            <div class="setting-icon">⇧</div>
+            <div>
+              <h2>恢复备份</h2>
+              <p>从本后台导出的备份文件恢复全部数据，会覆盖当前数据。</p>
+              <input id="restoreInput" type="file" accept=".json" hidden>
+              <button class="button secondary" id="restoreBackup">选择备份文件</button>
+            </div>
+          </article>
+
+          <article class="panel setting-card danger-zone">
+            <div class="setting-icon">!</div>
+            <div>
+              <h2>清空本地数据</h2>
+              <p>删除当前浏览器中的题目、知识点和导入记录，不会删除 GitHub 文件。</p>
+              <button class="button danger" id="clearAll">清空全部数据</button>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header"><div><h2>存储信息</h2><p>当前为 GitHub Pages 静态版本</p></div></div>
+            <dl class="info-list">
+              <div><dt>存储方式</dt><dd>localStorage（当前浏览器）</dd></div>
+              <div><dt>题目数量</dt><dd id="storageQuestionCount">0</dd></div>
+              <div><dt>估算占用</dt><dd id="storageUsage">0 KB</dd></div>
+              <div><dt>云端同步</dt><dd>尚未接入</dd></div>
+              <div><dt>AI分析</dt><dd>规则分析 V1</dd></div>
+            </dl>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="questionDialog" class="modal">
+    <form method="dialog" id="questionForm">
+      <div class="modal-header">
+        <div>
+          <h2 id="modalTitle">编辑题目</h2>
+          <p id="modalQuestionId"></p>
+        </div>
+        <button class="icon-button" value="cancel" aria-label="关闭">×</button>
+      </div>
+
+      <div class="modal-body">
+        <input id="editId" type="hidden">
+        <div class="form-grid four-columns">
+          <label class="field"><span>年级</span><select id="editGrade" required><option value="7">七年级</option><option value="8">八年级</option><option value="9">九年级</option></select></label>
+          <label class="field"><span>学期</span><select id="editSemester"><option value="">未指定</option><option value="上册">上册</option><option value="下册">下册</option></select></label>
+          <label class="field"><span>题型</span><select id="editType" required><option value="选择题">选择题</option><option value="填空题">填空题</option><option value="解答题">解答题</option><option value="证明题">证明题</option></select></label>
+          <label class="field"><span>难度</span><select id="editDifficulty" required><option value="1">1 入门</option><option value="2">2 基础</option><option value="3">3 中等</option><option value="4">4 较难</option><option value="5">5 挑战</option></select></label>
+        </div>
+        <div class="form-grid two-columns">
+          <label class="field"><span>章节</span><input id="editChapter" type="text" required></label>
+          <label class="field"><span>题型分类</span><input id="editCategory" type="text"></label>
+        </div>
+        <label class="field"><span>知识点（用逗号分隔）</span><input id="editKnowledge" type="text" placeholder="韦达定理, 两根之和, 两根之积"></label>
+        <label class="field"><span>题干</span><textarea id="editStem" rows="6" required></textarea></label>
+        <label class="field"><span>题干 LaTeX（可选）</span><textarea id="editLatex" rows="3"></textarea></label>
+        <div class="form-grid two-columns">
+          <label class="field"><span>选项 A</span><input id="editOptionA" type="text"></label>
+          <label class="field"><span>选项 B</span><input id="editOptionB" type="text"></label>
+          <label class="field"><span>选项 C</span><input id="editOptionC" type="text"></label>
+          <label class="field"><span>选项 D</span><input id="editOptionD" type="text"></label>
+        </div>
+        <div class="form-grid two-columns">
+          <label class="field"><span>标准答案</span><textarea id="editAnswer" rows="3" required></textarea></label>
+          <label class="field"><span>标准化答案</span><textarea id="editNormalizedAnswer" rows="3"></textarea></label>
+        </div>
+        <label class="field"><span>解析</span><textarea id="editAnalysis" rows="6"></textarea></label>
+        <div class="form-grid two-columns">
+          <label class="field"><span>核心方法</span><textarea id="editMethod" rows="3"></textarea></label>
+          <label class="field"><span>来源</span><textarea id="editSource" rows="3"></textarea></label>
+        </div>
+        <label class="field"><span>状态</span><select id="editStatus"><option value="review">待审核</option><option value="draft">草稿</option><option value="published">已发布</option><option value="offline">已下架</option></select></label>
+      </div>
+
+      <div class="modal-footer">
+        <button class="button ghost" value="cancel">取消</button>
+        <button class="button primary" id="saveQuestion" type="submit" value="default">保存题目</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="knowledgeDialog" class="modal small-modal">
+    <form method="dialog" id="knowledgeForm">
+      <div class="modal-header">
+        <div><h2>新增知识点</h2><p>新增后可参与自动分类</p></div>
+        <button class="icon-button" value="cancel">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="field"><span>年级</span><select id="newKnowledgeGrade"><option value="7">七年级</option><option value="8">八年级</option><option value="9">九年级</option></select></label>
+        <label class="field"><span>章节</span><input id="newKnowledgeChapter" type="text" required></label>
+        <label class="field"><span>知识点名称</span><input id="newKnowledgeName" type="text" required></label>
+        <label class="field"><span>匹配关键词（逗号分隔）</span><input id="newKnowledgeKeywords" type="text" placeholder="关键词1, 关键词2"></label>
+      </div>
+      <div class="modal-footer">
+        <button class="button ghost" value="cancel">取消</button>
+        <button class="button primary" type="submit" value="default">保存知识点</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./admin.js"></script>
+</body>
+</html>
